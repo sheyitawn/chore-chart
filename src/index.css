@@ -1,0 +1,475 @@
+:root {
+  --bg: #ffffff;
+  --text: #121212;
+  --muted: #6b7280;
+  --card: #f5f7fb;
+  --border: #e5e7eb;
+  --primary: #0b0d17;
+  --primaryText: #ffffff;
+  --accent: #22c55e;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0c0f14;
+  --text: #f3f4f6;
+  --muted: #a1a1aa;
+  --card: #151a22;
+  --border: #283041;
+  --primary: #111827;
+  --primaryText: #e5e7eb;
+  --accent: #34d399;
+}
+
+* {
+  box-sizing: border-box
+}
+
+html,
+body,
+#root {
+  height: 100%
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px
+}
+
+.app-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 28px
+}
+
+.sub {
+  margin-top: 4px;
+  color: var(--muted)
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px
+}
+
+.switch input {
+  transform: scale(1.1)
+}
+
+.btn {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer
+}
+
+.btn.primary {
+  background: var(--primary);
+  color: var(--primaryText);
+  border-color: transparent
+}
+
+.btn.secondary.active {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) inset
+}
+
+.btn.danger {
+  border-color: #ef4444;
+  color: #ef4444
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 16px
+}
+
+.tab {
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  cursor: pointer
+}
+
+.tab.active {
+  box-shadow: 0 2px 0 0 #0002 inset
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(4, 1fr);
+  gap: 12px;
+  align-items: center
+}
+
+.header {
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--card);
+  margin-bottom: 8px
+}
+
+.row {
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  background: var(--bg)
+}
+
+.center {
+  text-align: center
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 12px
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px dashed #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 4px
+}
+
+.chore-cell {
+  display: flex;
+  gap: 12px;
+  align-items: center
+}
+
+.icon {
+  font-size: 22px
+}
+
+.chore-info .title {
+  font-weight: 600
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px
+}
+
+/* Completed row style */
+.row.row-done {
+  opacity: 0.7;
+  background: linear-gradient(0deg, rgba(76, 175, 80, 0.07), rgba(76, 175, 80, 0.07)), var(--bg);
+  border-color: #86efac;
+}
+
+.pill.done {
+  margin-top: 6px;
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #d1d5db;
+  display: inline-block
+}
+
+.check.big {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 2px solid #22c55e;
+  background: transparent;
+  color: #22c55e;
+  font-size: 20px;
+  cursor: pointer
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #0007;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px
+}
+
+.modal {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: min(520px, 95%);
+  max-height: 90vh;
+  overflow: auto
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border)
+}
+
+.modal-body {
+  padding: 16px;
+  display: grid;
+  gap: 8px
+}
+
+.modal-body input,
+.modal-body select {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text)
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px
+}
+
+.icon-select {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer
+}
+
+.icon-select.active {
+  outline: 2px solid var(--primary)
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border)
+}
+
+.icon-btn {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer
+}
+
+.users {
+  padding: 8px 0
+}
+
+.user-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 10px
+}
+
+.user-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 12px;
+  display: grid;
+  gap: 8px
+}
+
+.user-card.add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--bg)
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  gap: 10px
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px
+}
+
+.spacer {
+  flex: 1
+}
+
+.user-card input {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text)
+}
+
+.row-end {
+  display: flex;
+  justify-content: flex-end
+}
+
+.notif-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+  margin: 12px 0
+}
+
+.footer {
+  margin: 18px 0;
+  color: var(--muted)
+}
+
+/* Existing .check.big was green outline. Keep it for generic use. */
+.check.big {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 2px solid #22c55e;
+  background: transparent;
+  color: #22c55e;
+  font-size: 20px;
+  cursor: pointer
+}
+
+/* NEW: red exclamation button for NOT DONE (assigned user) */
+.warn.big {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 2px solid #ef4444;
+  background: transparent;
+  color: #ef4444;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer
+}
+
+/* NEW: compact status indicator when DONE */
+.status-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.status-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+}
+
+.status-icon.done {
+  background: #22c55e20;
+  border-color: #22c55e;
+  color: #22c55e;
+  font-weight: 700;
+}
+
+/* Tiny link-styled button for Undo */
+.link-btn {
+  border: none;
+  background: none;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px
+}
+
+.link-btn:hover {
+  color: var(--text)
+}
+
+/* Exempt cell */
+.exempt {
+  opacity: 0.5
+}
+
+/* Warning pill (e.g., all users exempt) */
+.pill.warn {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #991b1b
+}
+
+/* Smaller avatar variant used in exemption lists */
+.avatar.mini {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px dashed #d1d5db;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  font-size: 12px
+}
+
+.exempt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px
+}
+
+.exempt-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px
+}

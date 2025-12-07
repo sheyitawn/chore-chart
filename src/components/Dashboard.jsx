@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { assignedUserForBalancedWithExempt, periodKey } from '../utils/rotation.js'
 import { saveState } from '../state/storage.js'
 import { uid } from '../utils/uid.js'
+import confetti from 'canvas-confetti'
 
 export default function Dashboard({ tab, setTab, state, setState, tabs }) {
   const [showModal, setShowModal] = useState(false)
@@ -29,7 +30,6 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
 
   // ----- Build visible list(s) -----
   const visibleChores = useMemo(() => {
-    const now = new Date()
     const listFor = (freq) => state.chores
       .filter(c => c.frequency === freq)
       .sort((a, b) => {
@@ -44,19 +44,62 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
       return listFor(freq)
     }
 
+    // TODAY MODE:
+    // - daily: all (due today until done)
+    // - weekly/monthly: only those not yet completed in current period
     const daily = listFor('daily')
     const weekly = listFor('weekly').filter(c => !isCompleted(c))
     const monthly = listFor('monthly').filter(c => !isCompleted(c))
     return [...daily, ...weekly, ...monthly]
   }, [state.chores, tab, state.completions])
 
-  // Hidden completed (applied last)
+  // **All done detection for TODAY** (independent of Hide Completed)
+  const allDoneToday = useMemo(() => {
+    if (tab !== 'Today') return false
+
+    // Build the "due today" set exactly as in visibleChores BEFORE hideCompleted filter:
+    const byFreq = (freq) => state.chores
+      .filter(c => c.frequency === freq)
+      .sort((a, b) => {
+        const ai = (a.sortIndex ?? Infinity)
+        const bi = (b.sortIndex ?? Infinity)
+        if (ai !== bi) return ai - bi
+        return (a.name || '').localeCompare(b.name || '') || a.id.localeCompare(b.id)
+      })
+
+    const dueDaily = byFreq('daily')
+    const dueWeeklyOpen = byFreq('weekly').filter(c => !isCompleted(c))
+    const dueMonthlyOpen = byFreq('monthly').filter(c => !isCompleted(c))
+
+    const dueAll = [...dueDaily, ...dueWeeklyOpen, ...dueMonthlyOpen]
+    if (dueAll.length === 0) return false // nothing due today
+
+    // All done iff every daily is completed, and weekly/monthly that were due are completed (already filtered)
+    const remaining = dueAll.filter(c => !isCompleted(c))
+    return remaining.length === 0
+  }, [tab, state.chores, state.completions])
+
+  // Fire confetti once per day after "all done" transitions to true
+  const lastCelebratedKeyRef = useRef(null)
+  useEffect(() => {
+    if (tab !== 'Today') return
+    if (!allDoneToday) return
+    const d = new Date()
+    const key = `D:${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`
+    if (lastCelebratedKeyRef.current === key) return
+
+    // Celebrate!
+    burstConfetti()
+    lastCelebratedKeyRef.current = key
+  }, [tab, allDoneToday])
+
+  // Hidden completed (applied last for normal rendering)
   const choresToRender = useMemo(() => {
     if (!hideCompleted) return visibleChores
     return visibleChores.filter(c => !isCompleted(c))
   }, [visibleChores, hideCompleted, state.completions])
 
-  // ----- Balanced offset per frequency -----
+  // ----- Balanced offset per frequency (for Today we still use per-frequency ranks) -----
   const rankByIdDaily = useMemo(() => {
     const map = new Map()
     const daily = state.chores
@@ -177,7 +220,16 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
         ))}
       </div>
 
-      {choresToRender.map(chore => {
+      {/* All-done message for Today */}
+      {tab === 'Today' && allDoneToday && (
+        <div className="celebrate">
+          <div className="celebrate-title">All chores completed! Good job, guys! 🎉</div>
+          <div className="celebrate-sub">Come back tomorrow for fresh tasks.</div>
+          <button className="btn" onClick={burstConfetti}>Celebrate again</button>
+        </div>
+      )}
+
+      {!allDoneToday && choresToRender.map(chore => {
         const exemptIds = chore.exemptUserIds || []
         const eligibleUsers = users.filter(u => !exemptIds.includes(u.id))
         const offset = offsetFor(chore.id, chore.frequency)
@@ -217,7 +269,7 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
             </div>
 
             {users.map((u) => {
-              const isExempt = exemptIds.includes(u.id)
+              const isExempt = (chore.exemptUserIds || []).includes(u.id)
               if (isExempt) {
                 return (
                   <div key={u.id} className="center muted exempt">—</div>
@@ -472,6 +524,7 @@ function EditChoreModal({ users, chore, onClose, onSave, onDelete }) {
 
 function emojiFor(ic) { return ic || '🧹' }
 
+/** Schedule a one-shot re-render at the next period boundary for the active tab. */
 function scheduleNextBoundaryTick(tab, cb, timerRef) {
   if (timerRef.current) clearTimeout(timerRef.current)
   const now = new Date()
@@ -498,4 +551,12 @@ function scheduleNextBoundaryTick(tab, cb, timerRef) {
     cb()
     scheduleNextBoundaryTick(tab, cb, timerRef)
   }, ms)
+}
+
+/** Confetti burst helper */
+function burstConfetti() {
+  const defaults = { spread: 72, ticks: 180, gravity: 0.8, startVelocity: 32 }
+  confetti({ ...defaults, particleCount: 60, origin: { x: 0.2, y: 0.2 } })
+  confetti({ ...defaults, particleCount: 60, origin: { x: 0.8, y: 0.2 } })
+  confetti({ ...defaults, particleCount: 80, origin: { x: 0.5, y: 0.1 } })
 }

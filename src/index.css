@@ -473,3 +473,22 @@ body {
   border-radius: 8px;
   padding: 6px 8px
 }
+
+/* Celebration block */
+.celebrate{
+  border:1px solid var(--border);
+  background:var(--card);
+  border-radius:14px;
+  padding:24px;
+  text-align:center;
+  margin:16px 0 8px;
+}
+.celebrate-title{
+  font-size:20px;
+  font-weight:700;
+  margin-bottom:6px;
+}
+.celebrate-sub{
+  color:var(--muted);
+  margin-bottom:12px;
+}

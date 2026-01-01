@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
 import { loadState, saveState, seedIfEmpty } from './state/storage.js'
@@ -5,7 +6,7 @@ import { ensureNotificationPermission, scheduleTick } from './utils/notify.js'
 import Dashboard from './components/Dashboard.jsx'
 import Users from './components/Users.jsx'
 
-const TABS = ['Today', 'Daily', 'Weekly', 'Monthly']
+const TABS = ['Today', 'Daily', 'Weekly', 'Monthly', 'Leaderboard', 'Podium']
 
 export default function App() {
   seedIfEmpty()
@@ -35,6 +36,7 @@ export default function App() {
 
   useEffect(() => {
     ensureNotificationPermission()
+    // Tick so any "period seeding" logic in Dashboard can re-check while app is open.
     const stop = scheduleTick(() => {}, 60_000)
     return stop
   }, [])

@@ -492,3 +492,627 @@ body {
   color:var(--muted);
   margin-bottom:12px;
 }
+
+/* =========================
+   Leaderboard + Podium 2.0
+   ========================= */
+
+/* Extra tokens (work in both themes) */
+:root {
+  --glow: rgba(34, 197, 94, 0.18);
+  --gold: #f6c453;
+  --silver: #c7cdd6;
+  --bronze: #d49b6a;
+  --danger: #ef4444;
+
+  --panel: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.00));
+  --panel-2: linear-gradient(180deg, rgba(34,197,94,0.08), rgba(34,197,94,0.00));
+}
+
+:root[data-theme="dark"] {
+  --glow: rgba(52, 211, 153, 0.18);
+  --panel: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.00));
+  --panel-2: linear-gradient(180deg, rgba(52,211,153,0.12), rgba(52,211,153,0.00));
+}
+
+/* ---------- Leaderboard ---------- */
+
+.leaderboard-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  margin: 10px 0 14px;
+}
+
+.leaderboard-controls{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.lb-grid{
+  display:grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap:14px;
+}
+
+@media (max-width: 900px){
+  .lb-grid{ grid-template-columns: 1fr; }
+}
+
+/* Card: closer to "dashboard module" */
+.lb-card{
+  border: 1px solid var(--border);
+  background: var(--card);
+  background-image: var(--panel);
+  border-radius: 18px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.lb-card::after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  pointer-events:none;
+  border-radius: 18px;
+  background: radial-gradient(700px 220px at 10% 0%, var(--glow), transparent 60%);
+  opacity: 0.55;
+}
+
+.lb-title{
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  margin-bottom: 12px;
+}
+
+/* row becomes 2-line with a meter */
+.lb-row{
+  display:grid;
+  grid-template-columns: 64px 1fr 64px;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  row-gap: 6px;
+  align-items:center;
+  padding: 12px 10px;
+  border-radius: 14px;
+  position: relative;
+}
+
+.lb-row:not(:last-child){
+  border-bottom: 1px solid var(--border);
+}
+
+.lb-row.is-top{
+  background-image: var(--panel-2);
+  border: 1px solid rgba(34,197,94,0.25);
+}
+
+/* rank chip like a badge */
+.lb-rankChip{
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: 900;
+  color: var(--muted);
+}
+
+.lb-row.is-top .lb-rankChip{
+  color: #0a3d2a;
+  border-color: rgba(34,197,94,0.35);
+  background: rgba(34,197,94,0.12);
+}
+
+:root[data-theme="dark"] .lb-row.is-top .lb-rankChip{
+  color: #b7ffe6;
+}
+
+.lb-person{
+  grid-column: 2;
+  grid-row: 1;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.lb-personMeta{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.lb-name{
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.lb-sub{
+  font-size: 12px;
+}
+
+/* score chip right side */
+.lb-scoreChip{
+  grid-column: 3;
+  grid-row: 1;
+  justify-self:end;
+  min-width: 54px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: 900;
+}
+
+.lb-row.is-top .lb-scoreChip{
+  border-color: rgba(34,197,94,0.35);
+  background: rgba(34,197,94,0.10);
+}
+
+/* progress bar under the name (CRM-style) */
+.lb-bar{
+  grid-column: 2 / 4;
+  grid-row: 2;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.04);
+  overflow:hidden;
+}
+
+:root[data-theme="dark"] .lb-bar{
+  background: rgba(255,255,255,0.06);
+}
+
+.lb-barFill{
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(34,197,94,0.95), rgba(34,197,94,0.35));
+}
+
+/* tracked chores list: keep minimal but a bit more punch */
+.lb-choreIcon{
+  width: 18px;
+  text-align:center;
+  color: var(--muted);
+}
+
+/* ---------- Podium ---------- */
+
+.podium-wrap{
+  display:grid;
+  grid-template-columns: 1.3fr 0.7fr;
+  gap: 14px;
+}
+
+@media (max-width: 900px){
+  .podium-wrap{ grid-template-columns: 1fr; }
+}
+
+.podium{
+  border:1px solid var(--border);
+  background: var(--card);
+  background-image: radial-gradient(800px 300px at 50% 0%, rgba(124,58,237,0.12), transparent 65%),
+                    var(--panel);
+  border-radius: 18px;
+  padding: 18px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  gap: 12px;
+  min-height: 360px;
+  position: relative;
+  overflow:hidden;
+}
+
+.podium::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background: radial-gradient(500px 180px at 60% 10%, rgba(34,197,94,0.10), transparent 70%);
+  opacity: 0.8;
+}
+
+.podium-block{
+  width: 30%;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+}
+
+.podium-block .podium-card{
+  width: 100%;
+  border:1px solid var(--border);
+  background: var(--bg);
+  border-radius: 18px;
+  padding: 14px;
+  text-align:center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+  position: relative;
+  overflow:hidden;
+}
+
+:root[data-theme="dark"] .podium-block .podium-card{
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+/* podium height tiers */
+.p1 .podium-card{ min-height: 240px; }
+.p2 .podium-card{ min-height: 185px; opacity: .96; }
+.p3 .podium-card{ min-height: 155px; opacity: .92; }
+
+/* subtle gradient highlight per place */
+.p1 .podium-card::before,
+.p2 .podium-card::before,
+.p3 .podium-card::before{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  pointer-events:none;
+  opacity: 0.9;
+  background: radial-gradient(500px 170px at 50% -10%, rgba(246,196,83,0.20), transparent 60%);
+}
+
+.p2 .podium-card::before{
+  background: radial-gradient(500px 170px at 50% -10%, rgba(199,205,214,0.18), transparent 60%);
+}
+.p3 .podium-card::before{
+  background: radial-gradient(500px 170px at 50% -10%, rgba(212,155,106,0.18), transparent 60%);
+}
+
+/* medal circle */
+.podium-medal{
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: 900;
+  margin: 0 auto 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.podium-medal.p1{
+  background: rgba(246,196,83,0.18);
+  border-color: rgba(246,196,83,0.35);
+}
+.podium-medal.p2{
+  background: rgba(199,205,214,0.14);
+  border-color: rgba(199,205,214,0.30);
+}
+.podium-medal.p3{
+  background: rgba(212,155,106,0.14);
+  border-color: rgba(212,155,106,0.30);
+}
+.podium-user{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.podium-userText{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.podium-name{
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+
+
+/* ---------- Chaos Goblin (designed header + aura) ---------- */
+
+.goblin{
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 18px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+
+  /* more intentional header-card look */
+  background-image:
+    radial-gradient(700px 260px at 100% 0%, rgba(124,58,237,0.18), transparent 60%),
+    radial-gradient(600px 240px at 10% 10%, rgba(239,68,68,0.14), transparent 60%),
+    radial-gradient(520px 220px at 40% 110%, rgba(34,197,94,0.10), transparent 60%),
+    var(--panel);
+}
+
+.goblin::after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  pointer-events:none;
+  border-radius: 18px;
+  background: radial-gradient(520px 220px at 55% 0%, rgba(0,0,0,0.08), transparent 70%);
+  opacity: 0.8;
+}
+
+.goblin-header{
+  display:flex;
+  align-items:center;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.goblin-header::before{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  pointer-events:none;
+  border-radius: 16px;
+  background:
+    radial-gradient(420px 160px at 20% 0%, rgba(239,68,68,0.12), transparent 65%),
+    radial-gradient(420px 160px at 80% 0%, rgba(124,58,237,0.12), transparent 65%);
+  opacity: 0.9;
+}
+
+.goblin-meta{
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.goblin-titleRow{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.goblin-title{
+  font-weight: 950;
+  letter-spacing: 0.2px;
+}
+
+.goblin-tag{
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(239,68,68,0.30);
+  background: rgba(239,68,68,0.10);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .goblin-tag{
+  background: rgba(239,68,68,0.12);
+}
+
+.goblin-sub{
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* The bin becomes a “hero icon” */
+.goblin-bin{
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 34px;
+  line-height: 1;
+
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.25),
+    inset 0 0 0 1px rgba(255,255,255,0.04);
+
+  filter: grayscale(0.15);
+}
+
+
+.bin-lid{
+  position:absolute;
+  top: 8px;
+  left: 10px;
+  right: 10px;
+  height: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(239,68,68,0.30), rgba(239,68,68,0.08));
+  transform: rotate(-10deg);
+}
+
+.bin-lid::before{
+  content:"";
+  position:absolute;
+  top: -6px;
+  left: 18px;
+  right: 18px;
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(239,68,68,0.25);
+  background: rgba(0,0,0,0.02);
+}
+
+:root[data-theme="dark"] .bin-lid::before{
+  background: rgba(255,255,255,0.05);
+}
+
+.bin-body{
+  position:absolute;
+  top: 18px;
+  left: 12px;
+  right: 12px;
+  bottom: 8px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow:hidden;
+
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.00)),
+    linear-gradient(180deg, rgba(124,58,237,0.14), rgba(239,68,68,0.06));
+}
+
+:root[data-theme="dark"] .bin-body{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.00)),
+    linear-gradient(180deg, rgba(124,58,237,0.16), rgba(239,68,68,0.07));
+}
+
+/* ribs / texture */
+.bin-body::before{
+  content:"";
+  position:absolute;
+  inset: 8px;
+  border-radius: 12px;
+  opacity: 0.8;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(0,0,0,0.12) 0px,
+      rgba(0,0,0,0.12) 3px,
+      rgba(0,0,0,0.00) 10px,
+      rgba(0,0,0,0.00) 14px
+    );
+}
+
+:root[data-theme="dark"] .bin-body::before{
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.10) 0px,
+      rgba(255,255,255,0.10) 3px,
+      rgba(255,255,255,0.00) 10px,
+      rgba(255,255,255,0.00) 14px
+    );
+}
+
+/* subtle hazard stripe at bottom */
+.bin-body::after{
+  content:"";
+  position:absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  height: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(239,68,68,0.20);
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(239,68,68,0.35) 0px,
+      rgba(239,68,68,0.35) 8px,
+      rgba(124,58,237,0.18) 8px,
+      rgba(124,58,237,0.18) 16px
+    );
+  opacity: 0.55;
+}
+
+/* aura */
+.bin-glow{
+  position:absolute;
+  inset:-14px;
+  border-radius: 22px;
+  pointer-events:none;
+  opacity: 0.9;
+  background:
+    radial-gradient(40px 40px at 25% 25%, rgba(239,68,68,0.28), transparent 70%),
+    radial-gradient(52px 52px at 78% 20%, rgba(124,58,237,0.26), transparent 70%),
+    radial-gradient(54px 54px at 52% 86%, rgba(34,197,94,0.16), transparent 70%);
+}
+
+/* gentle float (respects reduced motion) */
+@media (prefers-reduced-motion: no-preference) {
+  .goblin-bin{
+    animation: goblinFloat 4.6s ease-in-out infinite;
+  }
+  @keyframes goblinFloat{
+    0%, 100% { transform: rotate(-4deg) translateY(0px); }
+    50% { transform: rotate(-4deg) translateY(-3px); }
+  }
+}
+
+/* last-place tile gets a “dashboard pill row” feel */
+.goblin-user{
+  margin-top: 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 12px;
+  position: relative;
+  overflow:hidden;
+}
+
+.goblin-user::after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  pointer-events:none;
+  border-radius: 14px;
+  background:
+    radial-gradient(420px 140px at 15% 0%, rgba(239,68,68,0.10), transparent 60%);
+  opacity: 0.9;
+}
+
+.goblin-userLeft{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.goblin-userName{
+  font-weight: 900;
+}
+
+.goblin-scorePill{
+  position: relative;
+  z-index: 1;
+  min-width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: 900;
+}
+
+.lb-person{
+  display: flex;
+  align-items: center;
+}
+
+.lb-personMeta{
+  display: flex;
+  flex-direction: column;
+}

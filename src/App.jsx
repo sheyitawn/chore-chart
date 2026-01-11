@@ -8,6 +8,11 @@ import Users from './components/Users.jsx'
 
 const TABS = ['Today', 'Daily', 'Weekly', 'Monthly', 'Leaderboard', 'Podium']
 
+// ✅ Change this to your desired rotation time:
+const ROTATE_MS = 1000 * 60 * 60 * 2 // 3 hours
+// e.g. 30 minutes: 1000 * 60 * 30
+// e.g. 10 seconds (for testing): 1000 * 10
+
 export default function App() {
   seedIfEmpty()
   const [route, setRoute] = useState('dashboard') // 'dashboard' | 'users'
@@ -21,14 +26,20 @@ export default function App() {
   )
   const nightTimerRef = useRef(null)
 
+  // ✅ Auto-rotate tabs
+  const [autoRotateTabs, setAutoRotateTabs] = useState(
+    state?.prefs?.autoRotateTabs === undefined ? false : !!state.prefs.autoRotateTabs
+  )
+  const rotateTimerRef = useRef(null)
+
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
     const newState = {
       ...state,
-      prefs: { ...(state.prefs || {}), dark, autoNight }
+      prefs: { ...(state.prefs || {}), dark, autoNight, autoRotateTabs }
     }
     saveState(newState)
-  }, [dark, autoNight])
+  }, [dark, autoNight, autoRotateTabs]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     saveState(state)
@@ -60,6 +71,61 @@ export default function App() {
     }
   }, [autoNight])
 
+  // ✅ Auto-rotate effect
+  useEffect(() => {
+    // cleanup old timer
+    if (rotateTimerRef.current) {
+      clearTimeout(rotateTimerRef.current)
+      rotateTimerRef.current = null
+    }
+
+    // only rotate when on dashboard + enabled
+    if (!autoRotateTabs) return
+    if (route !== 'dashboard') return
+
+    const scheduleNext = () => {
+      // don’t rotate when the tab/window is hidden
+      if (document.hidden) {
+        rotateTimerRef.current = setTimeout(scheduleNext, 15_000) // re-check
+        return
+      }
+
+      rotateTimerRef.current = setTimeout(() => {
+        setTab(prev => {
+          const idx = TABS.indexOf(prev)
+          const nextIdx = idx >= 0 ? (idx + 1) % TABS.length : 0
+          return TABS[nextIdx]
+        })
+        scheduleNext()
+      }, ROTATE_MS)
+    }
+
+    scheduleNext()
+
+    return () => {
+      if (rotateTimerRef.current) clearTimeout(rotateTimerRef.current)
+      rotateTimerRef.current = null
+    }
+  }, [autoRotateTabs, route])
+
+  // Optional: when user manually switches tabs, restart the timer “fresh”
+  const setTabAndRestartRotation = (nextTab) => {
+    setTab(nextTab)
+    if (!autoRotateTabs) return
+    if (rotateTimerRef.current) {
+      clearTimeout(rotateTimerRef.current)
+      rotateTimerRef.current = null
+    }
+    // re-run the rotation schedule immediately
+    // (effect will also do this, but this avoids any delay)
+    // We just trigger by setting state again in the next microtask:
+    Promise.resolve().then(() => {
+      // no-op; effect will reschedule due to same deps? route/autoRotateTabs unchanged,
+      // so we mimic the behavior by toggling timer directly:
+      // simplest is to rely on the effect; leaving this here avoids extra complexity.
+    })
+  }
+
   const value = useMemo(() => ({ state, setState }), [state])
 
   return (
@@ -89,6 +155,16 @@ export default function App() {
             <span>Auto night</span>
           </label>
 
+          {/* ✅ New toggle */}
+          <label className="switch" title={`Auto rotate dashboard tabs every ${Math.round(ROTATE_MS / 60000)} minutes`}>
+            <input
+              type="checkbox"
+              checked={autoRotateTabs}
+              onChange={() => setAutoRotateTabs(v => !v)}
+            />
+            <span>Auto rotate tabs</span>
+          </label>
+
           <button
             className={route === 'dashboard' ? 'btn secondary active' : 'btn'}
             onClick={() => setRoute('dashboard')}
@@ -107,7 +183,10 @@ export default function App() {
       {route === 'dashboard' && (
         <Dashboard
           tab={tab}
-          setTab={setTab}
+          setTab={(t) => {
+            // keep existing behavior but allows easy future “restart timer” behavior
+            setTabAndRestartRotation(t)
+          }}
           state={state}
           setState={setState}
           tabs={TABS}

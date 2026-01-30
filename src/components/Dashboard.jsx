@@ -24,6 +24,7 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
   const [showModal, setShowModal] = useState(false)
   const [editChore, setEditChore] = useState(null)
   const [hideCompleted, setHideCompleted] = useState(false)
+  const [completeConfirm, setCompleteConfirm] = useState(null) // { chore, user } when asking "mark as complete for name?"
 
   // ---- Automatic re-render at the next period boundary ----
   const [, forceTick] = useState(0)
@@ -330,7 +331,13 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
                       !
                     </button>
                   ) : (
-                    <span className="dot" />
+                    <button
+                      type="button"
+                      className="dot dot-clickable"
+                      onClick={() => setCompleteConfirm({ chore, user: u })}
+                      title={`Mark as complete for ${u.name}`}
+                      aria-label={`Mark as complete for ${u.name}`}
+                    />
                   )}
                 </div>
               )
@@ -377,6 +384,32 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
             setEditChore(null)
           }}
         />
+      )}
+
+      {completeConfirm && (
+        <div className="modal-backdrop" onClick={() => setCompleteConfirm(null)}>
+          <div className="modal modal-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-body">
+              <p className="confirm-msg">
+                Mark as complete for <strong>{completeConfirm.user.name}</strong>?
+              </p>
+              <div className="confirm-actions">
+                <button className="btn" onClick={() => setCompleteConfirm(null)}>
+                  No
+                </button>
+                <button
+                  className="btn primary"
+                  onClick={() => {
+                    mark(completeConfirm.chore.id, completeConfirm.user.id)
+                    setCompleteConfirm(null)
+                  }}
+                >
+                  Yes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

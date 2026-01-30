@@ -209,7 +209,23 @@ body {
   height: 10px;
   border-radius: 999px;
   background: #d1d5db;
-  display: inline-block
+  display: inline-block;
+}
+
+.dot-clickable {
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  transition: background 0.15s;
+}
+
+.dot-clickable:hover {
+  background: #9ca3af;
+}
+
+.dot-clickable:focus-visible {
+  outline: 2px solid var(--primary, #3b82f6);
+  outline-offset: 2px;
 }
 
 .check.big {
@@ -240,7 +256,22 @@ body {
   border-radius: 12px;
   width: min(520px, 95%);
   max-height: 90vh;
-  overflow: auto
+  overflow: auto;
+}
+
+.modal.modal-sm {
+  width: min(360px, 95%);
+}
+
+.confirm-msg {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 .modal-header {

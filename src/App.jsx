@@ -9,7 +9,7 @@ import Users from './components/Users.jsx'
 const TABS = ['Today', 'Daily', 'Weekly', 'Monthly', 'Leaderboard', 'Podium']
 
 // ✅ Change this to your desired rotation time:
-const ROTATE_MS = 1000 * 60 * 60 * 2 // 3 hours
+const ROTATE_MS = 1000 * 60 * 60 // 1 hour
 // e.g. 30 minutes: 1000 * 60 * 30
 // e.g. 10 seconds (for testing): 1000 * 10
 
@@ -106,7 +106,7 @@ export default function App() {
       if (rotateTimerRef.current) clearTimeout(rotateTimerRef.current)
       rotateTimerRef.current = null
     }
-  }, [autoRotateTabs, route])
+  }, [autoRotateTabs, route, tab])
 
   // Optional: when user manually switches tabs, restart the timer “fresh”
   const setTabAndRestartRotation = (nextTab) => {

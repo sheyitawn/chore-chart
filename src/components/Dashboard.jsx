@@ -1207,7 +1207,7 @@ function HallOfFameList({ seasons }) {
             <header className="hof-plaqueHeader">
               <div className="hof-plaqueMonth">{p.winnerName}</div>
               <div className="hof-plaqueRibbon">
-                {isTop ? 'Reigning Champion' : 'Hall of Fame'}
+                {isTop ? 'Reigning Champion' : 'Previous Winner'}
               </div>
             </header>
 

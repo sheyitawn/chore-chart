@@ -13,12 +13,15 @@ import {
 } from '../state/ledgerDb.js'
 
 export default function Dashboard({ tab, setTab, state, setState, tabs }) {
-  // Leaderboard / Podium tabs
+  // Leaderboard / Podium / Hall of Fame tabs
   if (tab === 'Leaderboard') {
     return <LeaderboardTab tabs={tabs} tab={tab} setTab={setTab} state={state} />
   }
   if (tab === 'Podium') {
     return <PodiumTab tabs={tabs} tab={tab} setTab={setTab} state={state} />
+  }
+  if (tab === 'Hall of Fame') {
+    return <HallOfFameTab tabs={tabs} tab={tab} setTab={setTab} state={state} />
   }
 
   const [showModal, setShowModal] = useState(false)
@@ -54,6 +57,28 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
     })()
     return () => { cancelled = true }
   }, [state.chores, state.users, state.completions])
+
+  // ---- One-time backfill of legacy completions into ledger for Hall of Fame ----
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      if (state.prefs?.ledgerBackfillDoneV1) return
+      try {
+        await backfillLedgerFromLegacyCompletions(state)
+        if (cancelled) return
+        const next = {
+          ...state,
+          prefs: { ...(state.prefs || {}), ledgerBackfillDoneV1: true }
+        }
+        setState(next)
+        saveState(next)
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('Ledger backfill failed:', e)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [state])
 
   // Helpers
   const users = state.users
@@ -716,7 +741,6 @@ async function ensureLedgerSeededForNow(state) {
 // -------------------- Leaderboard & Podium tabs --------------------
 
 function LeaderboardTab({ tabs, tab, setTab, state }) {
-  const [range, setRange] = useState('all') // all | week | month
   const [rows, setRows] = useState([])
   const [taskCounts, setTaskCounts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -726,8 +750,8 @@ function LeaderboardTab({ tabs, tab, setTab, state }) {
     ;(async () => {
       setLoading(true)
       const all = await getAllTaskInstances()
-
-      const filtered = filterByRange(all, range)
+      // Always use THIS MONTH only for the seasonal leaderboard
+      const filtered = filterByRange(all, 'month')
       const trackedChoreIds = new Set(
         state.chores.filter(c => c.trackOnLeaderboard !== false).map(c => c.id)
       )
@@ -774,7 +798,7 @@ function LeaderboardTab({ tabs, tab, setTab, state }) {
     })()
 
     return () => { cancelled = true }
-  }, [range, state.users, state.chores])
+  }, [state.users, state.chores])
 
   return (
     <div className="dashboard">
@@ -793,14 +817,7 @@ function LeaderboardTab({ tabs, tab, setTab, state }) {
       <div className="leaderboard-head">
         <div>
           <h2 style={{ margin: 0 }}>Leaderboard</h2>
-          <div className="muted">Who’s completing the most tasks</div>
-        </div>
-
-        <div className="leaderboard-controls">
-          <span className="muted">Range</span>
-          <button className={range === 'all' ? 'btn secondary active' : 'btn'} onClick={() => setRange('all')}>All-time</button>
-          <button className={range === 'week' ? 'btn secondary active' : 'btn'} onClick={() => setRange('week')}>Last 7 days</button>
-          <button className={range === 'month' ? 'btn secondary active' : 'btn'} onClick={() => setRange('month')}>Last 30 days</button>
+          <div className="muted">Who’s completing the most chores this month</div>
         </div>
       </div>
 
@@ -883,7 +900,9 @@ function PodiumTab({ tabs, tab, setTab, state }) {
     ;(async () => {
       setLoading(true)
       const all = await getAllTaskInstances()
-      const completed = all.filter(t => t.completed && t.completedByUserId)
+      // Podium also uses this month's completions
+      const inRange = filterByRange(all, 'month')
+      const completed = inRange.filter(t => t.completed && t.completedByUserId)
 
       const byUser = new Map()
       for (const t of completed) {
@@ -1008,8 +1027,287 @@ function PodiumBlock({ place, user, height }) {
 
 function filterByRange(all, range) {
   if (range === 'all') return all
-  const now = Date.now()
-  const days = range === 'week' ? 7 : 30
-  const min = now - days * 86400000
-  return all.filter(t => (t.completedAt || 0) >= min)
+  const now = new Date()
+
+  if (range === 'week') {
+    const min = Date.now() - 7 * 86400000
+    return all.filter(t => (t.completedAt || 0) >= min)
+  }
+
+  if (range === 'month') {
+    const year = now.getFullYear()
+    const month = now.getMonth()
+    const start = new Date(year, month, 1).getTime()
+    const end = new Date(year, month + 1, 1).getTime()
+    return all.filter(t => {
+      const ts = t.completedAt || 0
+      return ts >= start && ts < end
+    })
+  }
+
+  return all
+}
+
+function formatMonthYear(year, monthIndex) {
+  const d = new Date(year, monthIndex, 1)
+  return d.toLocaleString(undefined, { month: 'long', year: 'numeric' })
+}
+
+function HallOfFameTab({ tabs, tab, setTab, state }) {
+  const [loading, setLoading] = useState(true)
+  const [seasons, setSeasons] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      const all = await getAllTaskInstances()
+      const completed = all.filter(t => t.completed && t.completedByUserId && t.completedAt)
+
+      const bySeasonKey = new Map()
+
+      for (const t of completed) {
+        const d = new Date(t.completedAt)
+        const year = d.getFullYear()
+        const month = d.getMonth()
+        const key = `${year}-${month}`
+
+        if (!bySeasonKey.has(key)) {
+          bySeasonKey.set(key, {
+            year,
+            month,
+            counts: new Map()
+          })
+        }
+
+        const season = bySeasonKey.get(key)
+        const uid = t.completedByUserId
+        season.counts.set(uid, (season.counts.get(uid) || 0) + 1)
+      }
+
+      const rows = Array.from(bySeasonKey.values())
+        .map(season => {
+          let winnerUserId = null
+          let max = 0
+          for (const [uid, count] of season.counts.entries()) {
+            if (count > max) {
+              max = count
+              winnerUserId = uid
+            }
+          }
+          const winner = state.users.find(u => u.id === winnerUserId) || null
+          return {
+            key: `${season.year}-${season.month}`,
+            year: season.year,
+            month: season.month,
+            label: formatMonthYear(season.year, season.month),
+            winnerUserId,
+            winnerName: winner?.name || 'Unknown',
+            winnerColor: winner?.color || '#6b7280',
+            totalCompleted: max
+          }
+        })
+        // newest month first
+        .sort((a, b) => {
+          if (a.year !== b.year) return b.year - a.year
+          return b.month - a.month
+        })
+
+      if (cancelled) return
+      setSeasons(rows)
+      setLoading(false)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [state.users])
+
+  return (
+    <div className="dashboard hof-wrap">
+      <div className="tabs">
+        {tabs.map(t => (
+          <button
+            key={t}
+            className={t === tab ? 'tab active' : 'tab'}
+            onClick={() => setTab(t)}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      <section className="hof-hero">
+        <div className="hof-heroGlow" aria-hidden="true" />
+        <div className="hof-heroInner">
+          <div className="hof-crest">
+            <div className="hof-crestCircle">
+              <span className="hof-crestIcon">🏅</span>
+            </div>
+            <div className="hof-crestBase" />
+          </div>
+
+          <div className="hof-heroText">
+            <h2 className="hof-title">Hall of Fame</h2>
+            <p className="hof-sub">
+              Champions of each month, honoured for keeping the house running.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {loading ? (
+        <div className="row">Loading…</div>
+      ) : seasons.length === 0 ? (
+        <div className="row muted">No completed seasons yet.</div>
+      ) : (
+        <HallOfFameList seasons={seasons} />
+      )}
+    </div>
+  )
+}
+
+function HallOfFameList({ seasons }) {
+  // Aggregate by winner so each person appears once
+  const byPerson = new Map()
+
+  for (const s of seasons) {
+    const id = s.winnerUserId || s.winnerName
+    if (!byPerson.has(id)) {
+      byPerson.set(id, {
+        winnerUserId: s.winnerUserId,
+        winnerName: s.winnerName,
+        winnerColor: s.winnerColor,
+        totalChores: 0,
+        seasons: []
+      })
+    }
+    const entry = byPerson.get(id)
+    entry.totalChores += s.totalCompleted
+    entry.seasons.push({
+      label: s.label,
+      count: s.totalCompleted,
+      key: s.key
+    })
+  }
+
+  const rows = Array.from(byPerson.values()).sort(
+    (a, b) => b.totalChores - a.totalChores || a.winnerName.localeCompare(b.winnerName)
+  )
+
+  return (
+    <section className="hof-list">
+      {rows.map((p, index) => {
+        const isTop = index === 0
+        return (
+          <article
+            key={p.winnerUserId || p.winnerName}
+            className={isTop ? 'hof-plaque hof-plaque-current' : 'hof-plaque'}
+          >
+            <header className="hof-plaqueHeader">
+              <div className="hof-plaqueMonth">{p.winnerName}</div>
+              <div className="hof-plaqueRibbon">
+                {isTop ? 'Reigning Champion' : 'Hall of Fame'}
+              </div>
+            </header>
+
+            <div className="hof-plaqueBody">
+              <div className="hof-winnerMeta">
+                <span className="hof-count">
+                  {p.totalChores} chore{p.totalChores === 1 ? '' : 's'} completed across{' '}
+                  {p.seasons.length} month{p.seasons.length === 1 ? '' : 's'}
+                </span>
+              </div>
+
+              <div className="hof-monthChips">
+                {p.seasons
+                  .slice()
+                  .sort((a, b) => (a.label > b.label ? -1 : 1))
+                  .map(season => (
+                    <span key={season.key} className="hof-monthChip">
+                      {season.label}{' '}
+                      <span className="hof-monthChipCount">
+                        · {season.count}
+                      </span>
+                    </span>
+                  ))}
+              </div>
+            </div>
+          </article>
+        )
+      })}
+    </section>
+  )
+}
+
+async function backfillLedgerFromLegacyCompletions(state) {
+  const completions = state.completions || {}
+  const choresById = new Map(state.chores.map(c => [c.id, c]))
+  const usersById = new Map(state.users.map(u => [u.id, u]))
+
+  const entries = Object.entries(completions)
+  for (const [pk, perChore] of entries) {
+    if (!perChore) continue
+    for (const [choreId, comp] of Object.entries(perChore)) {
+      if (!comp) continue
+      const chore = choresById.get(choreId)
+      if (!chore) continue
+
+      const doneByUserId = comp.doneByUserId
+      if (!doneByUserId) continue
+
+      const user = usersById.get(doneByUserId)
+      const inferredAt =
+        typeof comp.at === 'number' && comp.at > 0
+          ? comp.at
+          : inferTimestampFromPeriodKey(pk)
+      if (!inferredAt) continue
+
+      const id = `${pk}|${choreId}`
+      await upsertTaskInstance({
+        id,
+        periodKey: pk,
+        choreId,
+        choreNameSnapshot: chore.name || null,
+        frequencySnapshot: chore.frequency,
+        assignedUserId: null,
+        createdAt: inferredAt,
+        completed: true,
+        completedAt: inferredAt,
+        completedByUserId: doneByUserId,
+        completedByNameSnapshot: user?.name || null
+      })
+    }
+  }
+}
+
+function inferTimestampFromPeriodKey(pk) {
+  try {
+    if (pk.startsWith('D:')) {
+      const [, rest] = pk.split(':') // y-m-d
+      const [y, m, d] = rest.split('-').map(Number)
+      return new Date(y, (m || 1) - 1, d || 1).getTime()
+    }
+    if (pk.startsWith('M:')) {
+      const [, rest] = pk.split(':') // y-m
+      const [y, m] = rest.split('-').map(Number)
+      return new Date(y, (m || 1) - 1, 1).getTime()
+    }
+    if (pk.startsWith('W:')) {
+      const [, rest] = pk.split(':') // y-Wn
+      const [yearPart, weekPart] = rest.split('-W')
+      const y = Number(yearPart)
+      const w = Number(weekPart)
+      if (!y || !w) return null
+      // Approximate Monday of that ISO-like week
+      const d = new Date(y, 0, 1)
+      const day = d.getDay() || 7
+      const diff = (w - 1) * 7 - (day - 1)
+      d.setDate(d.getDate() + diff)
+      return d.getTime()
+    }
+  } catch {
+    return null
+  }
+  return null
 }

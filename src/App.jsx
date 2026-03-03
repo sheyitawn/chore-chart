@@ -6,7 +6,7 @@ import { ensureNotificationPermission, scheduleTick } from './utils/notify.js'
 import Dashboard from './components/Dashboard.jsx'
 import Users from './components/Users.jsx'
 
-const TABS = ['Today', 'Daily', 'Weekly', 'Monthly', 'Leaderboard', 'Podium']
+const TABS = ['Today', 'Daily', 'Weekly', 'Monthly', 'Leaderboard', 'Podium', 'Hall of Fame']
 
 // ✅ Change this to your desired rotation time:
 const ROTATE_MS = 1000 * 60 * 60 // 1 hour

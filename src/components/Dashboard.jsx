@@ -1168,69 +1168,39 @@ function HallOfFameTab({ tabs, tab, setTab, state }) {
 }
 
 function HallOfFameList({ seasons }) {
-  // Aggregate by winner so each person appears once
-  const byPerson = new Map()
-
-  for (const s of seasons) {
-    const id = s.winnerUserId || s.winnerName
-    if (!byPerson.has(id)) {
-      byPerson.set(id, {
-        winnerUserId: s.winnerUserId,
-        winnerName: s.winnerName,
-        winnerColor: s.winnerColor,
-        totalChores: 0,
-        seasons: []
-      })
-    }
-    const entry = byPerson.get(id)
-    entry.totalChores += s.totalCompleted
-    entry.seasons.push({
-      label: s.label,
-      count: s.totalCompleted,
-      key: s.key
-    })
-  }
-
-  const rows = Array.from(byPerson.values()).sort(
-    (a, b) => b.totalChores - a.totalChores || a.winnerName.localeCompare(b.winnerName)
+  const maxCompleted = seasons.reduce(
+    (max, s) => (s.totalCompleted > max ? s.totalCompleted : max),
+    0
   )
 
   return (
     <section className="hof-list">
-      {rows.map((p, index) => {
+      {seasons.map((s, index) => {
         const isTop = index === 0
+        const isCleanest = s.totalCompleted === maxCompleted && maxCompleted > 0
         return (
           <article
-            key={p.winnerUserId || p.winnerName}
+            key={s.key}
             className={isTop ? 'hof-plaque hof-plaque-current' : 'hof-plaque'}
           >
             <header className="hof-plaqueHeader">
-              <div className="hof-plaqueMonth">{p.winnerName}</div>
+              <div className="hof-plaqueMonth">{s.winnerName}</div>
               <div className="hof-plaqueRibbon">
-                {isTop ? 'Reigning Champion' : 'Previous Winner'}
+                {isTop ? 'Reigning champion' : 'Season champion'}
               </div>
             </header>
 
             <div className="hof-plaqueBody">
               <div className="hof-winnerMeta">
                 <span className="hof-count">
-                  {p.totalChores} chore{p.totalChores === 1 ? '' : 's'} completed across{' '}
-                  {p.seasons.length} month{p.seasons.length === 1 ? '' : 's'}
+                  {s.label} · {s.totalCompleted} chore
+                  {s.totalCompleted === 1 ? '' : 's'} completed
                 </span>
-              </div>
-
-              <div className="hof-monthChips">
-                {p.seasons
-                  .slice()
-                  .sort((a, b) => (a.label > b.label ? -1 : 1))
-                  .map(season => (
-                    <span key={season.key} className="hof-monthChip">
-                      {season.label}{' '}
-                      <span className="hof-monthChipCount">
-                        · {season.count}
-                      </span>
-                    </span>
-                  ))}
+                {isCleanest && (
+                  <span className="hof-tag hof-tag-cleanest">
+                    Cleanest month
+                  </span>
+                )}
               </div>
             </div>
           </article>

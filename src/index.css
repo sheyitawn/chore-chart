@@ -1334,6 +1334,10 @@ body {
   margin-top: 4px;
   font-size: 13px;
   color: var(--muted);
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap: 6px 10px;
 }
 
 .hof-count{
@@ -1361,4 +1365,21 @@ body {
 .hof-monthChipCount{
   opacity: 0.9;
   font-weight: 600;
+}
+
+.hof-tag{
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid rgba(148,163,184,0.70);
+  background: rgba(15,23,42,0.02);
+}
+
+.hof-tag-cleanest{
+  border-color: rgba(52,211,153,0.85);
+  background: rgba(16,185,129,0.12);
+  color: #065f46;
 }

@@ -197,7 +197,7 @@ export default function App() {
 
       <footer className="footer">
         <small>
-          Copyright @ 28 w***** w**
+          Copyright @ 28WW
         </small>
       </footer>
     </div>

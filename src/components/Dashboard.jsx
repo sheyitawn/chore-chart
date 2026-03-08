@@ -28,6 +28,7 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
   const [editChore, setEditChore] = useState(null)
   const [hideCompleted, setHideCompleted] = useState(false)
   const [completeConfirm, setCompleteConfirm] = useState(null) // { chore, user } when asking "mark as complete for name?"
+  const [filterByUser, setFilterByUser] = useState(null) // userId when viewing one person's chores
 
   // ---- Automatic re-render at the next period boundary ----
   const [, forceTick] = useState(0)
@@ -166,6 +167,22 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
     return rankByIdMonthly.get(choreId) ?? 0
   }
 
+  // When filtering by user: only chores where they're assigned or completed
+  const choresForView = useMemo(() => {
+    if (!filterByUser) return choresToRender
+    return choresToRender.filter(chore => {
+      const exemptIds = chore.exemptUserIds || []
+      const eligibleUsers = users.filter(u => !exemptIds.includes(u.id))
+      const offset = offsetFor(chore.id, chore.frequency)
+      const idxEligible = assignedUserForBalancedWithExempt(
+        chore, users, eligibleUsers, new Date(), offset
+      )
+      const assignedUser = idxEligible >= 0 ? eligibleUsers[idxEligible] : null
+      const completion = isCompleted(chore)
+      return assignedUser?.id === filterByUser || completion?.doneByUserId === filterByUser
+    })
+  }, [choresToRender, filterByUser, users, state.completions, state.chores])
+
   // Actions (now also writes to IndexedDB ledger)
   const mark = async (choreId, doneByUserId) => {
     const now = new Date()
@@ -257,11 +274,30 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
         </button>
       </div>
 
-      <div className="grid header">
+      {filterByUser && (
+        <div className="user-filter-bar">
+          <h3 className="user-filter-title">
+            {users.find(u => u.id === filterByUser)?.name || 'Unknown'}'s chores
+          </h3>
+          <button className="btn" onClick={() => setFilterByUser(null)}>
+            Show all
+          </button>
+        </div>
+      )}
+
+      <div className={`grid header ${filterByUser ? 'grid-filtered' : ''}`}>
         <div>Chore</div>
-        {users.map(u => (
+        {(filterByUser ? users.filter(u => u.id === filterByUser) : users).map(u => (
           <div key={u.id} className="center">
-            <Avatar user={u} />
+            <button
+              type="button"
+              className={`avatar-btn ${filterByUser === u.id ? 'active' : ''}`}
+              onClick={() => setFilterByUser(prev => (prev === u.id ? null : u.id))}
+              title={filterByUser ? 'Click to show all' : `View ${u.name}'s chores`}
+              aria-label={filterByUser ? 'Show all chores' : `View ${u.name}'s chores`}
+            >
+              <Avatar user={u} />
+            </button>
             <div className="muted">{u.name}</div>
           </div>
         ))}
@@ -275,7 +311,7 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
         </div>
       )}
 
-      {!allDoneToday && choresToRender.map(chore => {
+      {!allDoneToday && choresForView.map(chore => {
         const exemptIds = chore.exemptUserIds || []
         const eligibleUsers = users.filter(u => !exemptIds.includes(u.id))
         const offset = offsetFor(chore.id, chore.frequency)
@@ -314,7 +350,7 @@ export default function Dashboard({ tab, setTab, state, setState, tabs }) {
               </div>
             </div>
 
-            {users.map((u) => {
+            {(filterByUser ? users.filter(u => u.id === filterByUser) : users).map((u) => {
               const isExempt = (chore.exemptUserIds || []).includes(u.id)
               if (isExempt) {
                 return (
